@@ -1,0 +1,591 @@
+---
+title: |
+  <img src="img/banner.png" class="responsive" />
+  <br>
+  <br>
+  A gentle introduction to R: From raw data to results
+author:
+  - name: Julián David Rojas Aguilar
+    affiliation: Universidad de los Andes
+  - name: Ignacio Sarmiento-Barbieri
+    affiliation: Universidad de los Andes
+date: today
+date-format: "YYYY-MM-DD"
+format:
+  html:
+    theme: simplex
+    highlight-style: tango
+    toc: true
+    toc-depth: 3
+    toc-location: left
+    toc-title: "Content"
+    number-sections: false
+    code-fold: show
+    code-summary: "Show/hide code"
+    code-overflow: scroll
+    code-tools:
+      source: false
+      toggle: true
+    code-line-numbers: true
+    code-copy: hover
+    cap-location: top
+    fig-align: center
+    fig-width: 7
+    fig-asp: 0.5625
+    df-print: paged
+    embed-resources: true
+    self-contained: true
+    link-external-icon: true
+    link-external-newwindow: true
+    footnotes-hover: true
+execute:
+  echo: true
+  cache: false
+  warning: false
+  message: false
+---
+
+<style type="text/css">
+.responsive {
+ width: 100%;
+ height: 25%;
+}
+
+.list-group-item.active, .list-group-item.active:focus, .list-group-item.active:hover {
+    z-index: 2;
+    color: #fff;
+    background-color: #1B175E;
+    border-color: #337ab7;
+}
+
+h1, h2, h3, h4 {
+    color: #000002;
+    background-color: #1B175E;
+    background-image: linear-gradient(to right, #fff, #ffff00);
+    padding: 10px;
+    border-radius: 5px;
+}
+
+a {
+    color: #1B175E;
+    text-decoration: underline;
+}
+
+a:hover {
+    color: #1B175E;
+}
+
+.callout-note {
+    background-color: #f0f8ff;
+    border-left: 4px solid #1B175E;
+}
+
+.mathematical-expression {
+    background-color: #f0f0f0;
+    padding: 15px;
+    border-radius: 5px;
+    text-align: left;
+    margin: 20px 0;
+}
+</style>
+
+# A gentle introduction to R: From raw data to results
+Data analysis is a workflow: we import data, learn what it contains, make **explicit** cleaning decisions, summarize it, communicate the findings, and export our work. In this session, we will follow that complete workflow with a sample from Colombia's *Gran Encuesta Integrada de Hogares* (GEIH). Our practical question is:
+
+> What do weekly hours and monthly labor income look like among employed adults in Bogotá, and how do they differ by sex and employment formality?
+
+## Learning objectives
+By the end of the session, you should be able to:
+
+1. Import a dataset and inspect it.
+2. Select, rename, recode and filter variables.
+3. Produce overall and grouped descriptive statistics.
+4. Plot `ggplot2` figures.
+5. Export tables and figures using reproducible project paths.
+
+*Acknowledgement: Most of the materials used in this complementary session were contributed by previous TAs, especially [Eduard Martínez](https://eduard-martinez.github.io/), [Lucas Gómez](https://lgomezt.github.io/), Andrés Rengifo, Valentina Laverde, and Gustavo Castillo. We are truly grateful for their help.*
+
+# Initial configuration
+
+```{r setup}
+# Install pacman if necessary, then load the packages used in this session.
+if (!require(pacman)) install.packages("pacman")
+library(pacman)
+
+p_load(
+  rio,        # Import data from a URL.
+  tidyverse,  # Manipulate data and create figures.
+  here,       # Build reproducible project paths.
+  skimr,      # Inspect the contents of a database.
+  gtsummary,  # Create descriptive tables.
+  gt,         # Format and export tables.
+  conflicted, # Resolve conflicts between functions with the same name.
+  webshot2    # Export gt tables as PNG files.
+)
+
+conflict_prefer(name = "filter", winner = "dplyr") 
+
+options(scipen = 999) # Turn off scientific notation
+
+# Create the output folders if they do not already exist.
+dir.create(
+  path = here::here("output", "figures"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+dir.create(
+  path = here::here("output", "tables"),
+  recursive = TRUE,
+  showWarnings = FALSE
+)
+
+# Configure the default behavior for ggplot2: centered bold title, legend at 
+# the bottom, and transparent background.
+theme_set(theme_classic(base_size = 13))
+theme_update(
+  plot.title = element_text(face = "bold", hjust = 0.5),
+  plot.subtitle = element_text(size = rel(0.9)),
+  plot.caption = element_text(size = rel(0.8), hjust = 0),
+  legend.position = "bottom",
+  panel.background = element_rect(fill = "transparent", color = NA),
+  plot.background = element_rect(fill = "transparent", color = NA),
+  legend.key = element_rect(fill = "transparent", color = NA),
+  legend.background = element_rect(fill = "transparent", color = NA)
+)
+```
+
+# Importing data
+We will import a remote RDS file. An RDS file stores one R object. 
+
+```{r import-data}
+db_geih <- rio::import("https://raw.githubusercontent.com/ignaciomsarmiento/datasets/main/GEIH_sample1.Rds") |>
+  as_tibble()
+
+head(db_geih)
+```
+
+The same idea applies to other common formats:
+
+| Format | Typical function | Package |
+|:--|:--|:--|
+| CSV | `read_csv("file.csv")` | `readr` / `tidyverse` |
+| Excel | `read_excel("file.xlsx")` | `readxl` |
+| Stata | `read_dta("file.dta")` | `haven` |
+| SPSS | `read_sav("file.sav")` | `haven` |
+| RDS | `readRDS("file.rds")` | Base R |
+
+The sample contains people interviewed in Bogotá. The combination of household, sequence, and person-order identifiers distinguishes individuals. The original [data dictionary](https://ignaciomsarmiento.github.io/GEIH2018_sample/dictionary.html) documents the survey variables.
+
+# Inspecting the dataset
+
+Never start cleaning before learning what a database contains. `glimpse()` emphasizes column names and types, whereas `summary()` describes the distribution of selected variables.
+
+```{r inspect-glimpse}
+db_geih |>
+  select(age, sex, ocu, formal, totalHoursWorked, y_ingLab_m) |>
+  glimpse()
+```
+
+```{r inspect-summary}
+summary(db_geih |> select(age, sex, ocu, formal, totalHoursWorked, y_ingLab_m))
+```
+
+For a compact but richer diagnostic, `skim()` combines type, missingness, and distribution information.
+
+```{r inspect-skim}
+db_geih |>
+  select(age, sex, ocu, formal, totalHoursWorked, y_ingLab_m) |>
+  skimr::skim()
+```
+
+Note that the missing values in hours, formality, and labour income are not necessarily mistakes. These questions do not apply to children or people who are not employed. This is **structural missingness** that we must fix by defining our analysis unit before deciding which `NA` values to remove.
+
+# Cleaning the dataset
+Cleaning is a sequence of explicit decisions. Our unit of analysis will be an employed adult. 
+
+```{r clean-data}
+# We can rename several columns by creating a vector where each entry corresponds 
+# to the name of a column and its index corresponds to the new name we want to assign.
+text_vars <- c('num_age' = 'age', 'bin_male' = 'sex', 'bin_employed' = 'ocu', 
+               'bin_formal' = 'formal', 'num_hoursWorked' = 'totalHoursWorked', 
+               'num_labIncome' = 'y_ingLab_m')
+db_geih <- db_geih |>
+  select(all_of(text_vars)) |> 
+  filter(num_age >= 18,
+         bin_employed == 1) |> 
+  # The temporary logical variable `bin_employed` is used to define the sample 
+  # and then removed.
+  select(-c('bin_employed'))
+
+# Given our data handling, let's check again the distribution.
+db_geih |> skimr::skim()
+```
+
+# Descriptive statistics
+Descriptive statistics reduce many observations to a small set of interpretable quantities. Let's remember our research question. What can we say about weekly hours and monthly labor income across employed adults in Bogotá? How do they differ by sex and employment formality? 
+
+## Grouped summaries with `summarise()`
+
+```{r grouped-summary}
+tab_example <- db_geih |> 
+  summarise(num_mean_income = mean(num_labIncome, na.rm = TRUE),
+            num_median_income = median(num_labIncome, na.rm = TRUE),
+            num_median_incomeAlt = quantile(num_labIncome, probs = 0.5, na.rm = TRUE))
+
+tab_example <- db_geih |>
+  group_by(cat_sex, cat_formality) |>
+  summarise(
+    num_observations = n(),
+    num_mean_income = mean(num_labIncome),
+    num_median_income = median(num_labIncome),
+    num_sd_income = sd(num_labIncome),
+    num_p25_income = quantile(num_labIncome, 0.25),
+    num_p75_income = quantile(num_labIncome, 0.75),
+    num_mean_hours = mean(num_hours_worked),
+    .groups = "drop"
+  )
+
+tab_summary_by_group |>
+  gt() |>
+  cols_label(
+    cat_sex = "Sex",
+    cat_formality = "Formality",
+    num_observations = "N",
+    num_mean_income = "Mean income",
+    num_median_income = "Median income",
+    num_sd_income = "SD income",
+    num_p25_income = "P25 income",
+    num_p75_income = "P75 income",
+    num_mean_hours = "Mean hours"
+  ) |>
+  fmt_integer(columns = num_observations, sep_mark = ",") |>
+  fmt_number(
+    columns = starts_with("num_") & -num_observations,
+    decimals = 0,
+    sep_mark = ","
+  )
+```
+
+## A presentation-ready table
+
+```{r descriptive-table}
+tab_descriptive <- db_geih |>
+  select(
+    cat_formality,
+    cat_sex,
+    num_age,
+    num_hours_worked,
+    num_labIncome
+  ) |>
+  tbl_summary(
+    by = cat_formality,
+    statistic = list(
+      all_continuous() ~ "{median} ({p25}, {p75})",
+      all_categorical() ~ "{n} ({p}%)"
+    ),
+    digits = all_continuous() ~ 0,
+    label = list(
+      cat_sex = "Sex",
+      num_age = "Age",
+      num_hours_worked = "Weekly hours worked",
+      num_labIncome = "Monthly labour income (COP)"
+    ),
+    missing = "no"
+  ) |>
+  add_overall(last = FALSE) |>
+  modify_header(label ~ "**Variable**") |>
+  modify_caption("**Table 1. Descriptive statistics by formality**") |>
+  bold_labels() |>
+  italicize_levels() |>
+  as_gt() |>
+  tab_source_note(
+    source_note = md(
+      paste0(
+        "**Source:** Own calculations using the GEIH sample. ",
+        "**Note:** Continuous variables show median (P25, P75); ",
+        "categorical variables show n (%). Results are unweighted."
+      )
+    )
+  )
+
+tab_descriptive
+```
+
+```{r income-center, include=FALSE}
+num_mean_income <- mean(db_geih$num_labIncome)
+num_median_income <- median(db_geih$num_labIncome)
+```
+
+The overall mean monthly labour income is approximately
+`r scales::label_number(big.mark = ",", accuracy = 1)(num_mean_income)` COP,
+whereas the median is
+`r scales::label_number(big.mark = ",", accuracy = 1)(num_median_income)` COP.
+The higher mean indicates a right-skewed distribution: a relatively small number
+of high-income observations pull the average upward.
+
+::: {.callout-tip}
+## Exercise 3: change the comparison
+
+Create a grouped summary by `cat_sex` only. Report the sample size, median labour
+income, and median weekly hours. Which comparison is most substantively useful?
+:::
+
+::: {.callout-tip collapse="true"}
+## Suggested solution
+
+```{r exercise-3-solution}
+tab_summary_by_sex <- db_geih |>
+  group_by(cat_sex) |>
+  summarise(
+    num_observations = n(),
+    num_median_income = median(num_labIncome),
+    num_median_hours = median(num_hours_worked),
+    .groups = "drop"
+  )
+
+tab_summary_by_sex
+```
+:::
+
+# Visualizing data with `ggplot2`
+
+The grammar of graphics builds a figure from independent components:
+
+1. `ggplot()` declares the database and aesthetic mappings.
+2. A `geom_*()` function determines how observations are drawn.
+3. Scales control how values are displayed.
+4. `labs()` and themes make the result interpretable.
+
+Mappings inside `aes()` vary with the data. Fixed aesthetics, such as a single
+fill color, stay outside `aes()`.
+
+## Distribution of labour income
+
+```{r income-distribution}
+#| fig-cap: "Distribution of monthly labour income among employed adults."
+fig_income_distribution <- db_geih |>
+  ggplot(mapping = aes(x = num_labIncome)) +
+  geom_histogram(
+    bins = 35,
+    fill = "#3A5E8C",
+    color = "white",
+    linewidth = 0.25,
+    alpha = 0.85
+  ) +
+  coord_cartesian(xlim = c(0, num_income_p99)) +
+  scale_x_continuous(
+    labels = scales::label_number(
+      scale_cut = scales::cut_short_scale(),
+      prefix = "$"
+    ),
+    expand = expansion(mult = c(0, 0.02))
+  ) +
+  scale_y_continuous(
+    expand = expansion(mult = c(0, 0.05)),
+    limits = c(0, NA),
+    labels = scales::label_number(big.mark = ",")
+  ) +
+  labs(
+    title = "Monthly labour income is strongly right-skewed",
+    subtitle = "The x-axis is zoomed at the 99th percentile; no rows were deleted",
+    x = "Monthly labour income (COP)",
+    y = "Number of people",
+    caption = paste0(
+      "Source. Own calculations using the GEIH sample.\n",
+      "Note. Unweighted sample results."
+    )
+  )
+
+fig_income_distribution
+```
+
+The figure confirms what the descriptive statistics suggested: most observations
+are concentrated at lower income values, while a long upper tail raises the
+mean. Zooming the axis improves readability without changing the database.
+
+## Income by formality and sex
+
+```{r income-formality}
+#| fig-cap: "Monthly labour income by employment formality and sex."
+fig_income_by_formality <- db_geih |>
+  ggplot(
+    mapping = aes(
+      x = cat_formality,
+      y = num_labIncome,
+      fill = cat_formality
+    )
+  ) +
+  geom_boxplot(
+    width = 0.65,
+    alpha = 0.65,
+    outlier.alpha = 0.25,
+    na.rm = TRUE
+  ) +
+  facet_wrap(vars(cat_sex)) +
+  coord_cartesian(ylim = c(0, num_income_p99)) +
+  scale_fill_brewer(palette = "Set1", guide = "none") +
+  scale_y_continuous(
+    labels = scales::label_number(
+      scale_cut = scales::cut_short_scale(),
+      prefix = "$"
+    ),
+    expand = expansion(mult = c(0, 0.05))
+  ) +
+  labs(
+    title = "Labour income varies across employment groups",
+    subtitle = "Boxes show the median and interquartile range",
+    x = "Employment formality",
+    y = "Monthly labour income (COP)",
+    caption = paste0(
+      "Source. Own calculations using the GEIH sample.\n",
+      "Note. The y-axis is zoomed at the 99th percentile; results are unweighted."
+    )
+  )
+
+fig_income_by_formality
+```
+
+The boxplots make group comparisons easier than the overall histogram. Read the
+median line first, then compare the height of the boxes and the overlap between
+groups. The figure is descriptive and does not establish a causal effect of
+formality or sex on income.
+
+::: {.callout-tip}
+## Your turn: modify a plot
+
+Modify `fig_income_by_formality` so that the panels represent formality and the
+x-axis represents sex. Keep the labels and source note accurate.
+:::
+
+::: {.callout-tip collapse="true"}
+## Suggested solution
+
+```{r plot-exercise-solution}
+fig_income_by_sex <- db_geih |>
+  ggplot(
+    mapping = aes(
+      x = cat_sex,
+      y = num_labIncome,
+      fill = cat_sex
+    )
+  ) +
+  geom_boxplot(width = 0.65, alpha = 0.65, outlier.alpha = 0.25) +
+  facet_wrap(vars(cat_formality)) +
+  coord_cartesian(ylim = c(0, num_income_p99)) +
+  scale_fill_brewer(palette = "Set1", guide = "none") +
+  scale_y_continuous(
+    labels = scales::label_number(
+      scale_cut = scales::cut_short_scale(),
+      prefix = "$"
+    )
+  ) +
+  labs(
+    x = "Sex",
+    y = "Monthly labour income (COP)",
+    caption = "Source. Own calculations using the GEIH sample."
+  )
+
+fig_income_by_sex
+```
+:::
+
+# Exporting results
+
+Saving a named object makes export reproducible: we export the exact table or
+figure that we inspected above.
+
+```{r export-results}
+ggsave(
+  filename = here::here(
+    "output",
+    "figures",
+    "fig_income_distribution.png"
+  ),
+  plot = fig_income_distribution,
+  width = 7,
+  height = 4.5,
+  dpi = 300,
+  bg = "transparent"
+)
+
+ggsave(
+  filename = here::here(
+    "output",
+    "figures",
+    "fig_income_by_formality.png"
+  ),
+  plot = fig_income_by_formality,
+  width = 7,
+  height = 4.5,
+  dpi = 300,
+  bg = "transparent"
+)
+
+gt::gtsave(
+  data = tab_descriptive,
+  filename = here::here(
+    "output",
+    "tables",
+    "tab_descriptive.png"
+  ),
+  zoom = 2
+)
+```
+
+We can verify that the expected files exist without leaving R.
+
+```{r verify-exports}
+tab_export_check <- tibble(
+  cat_artifact = c(
+    "Income distribution figure",
+    "Income by formality figure",
+    "Descriptive table"
+  ),
+  cat_path = c(
+    here::here(
+      "output",
+      "figures",
+      "fig_income_distribution.png"
+    ),
+    here::here(
+      "output",
+      "figures",
+      "fig_income_by_formality.png"
+    ),
+    here::here(
+      "output",
+      "tables",
+      "tab_descriptive.png"
+    )
+  )
+) |>
+  mutate(bin_exists = file.exists(cat_path))
+
+tab_export_check
+```
+
+# Final exercise
+
+Choose either sex or formality and complete the workflow independently:
+
+1. Create one grouped table with a sample size and two descriptive statistics.
+2. Create one appropriately labelled figure.
+3. Write one sentence interpreting the main pattern.
+4. Export the figure to `output/figures/` with a meaningful `fig_` filename.
+5. Confirm the exported file exists.
+
+Before finishing, ask yourself:
+
+- Did I define the analytical population before removing missing values?
+- Can another person understand every factor label?
+- Does each table or figure answer a clear question?
+- Did I preserve unusual observations unless I had a defensible reason not to?
+- Can the notebook recreate every exported result from the original data?
+
+# References and further practice
+
+- Wickham, H., Çetinkaya-Rundel, M., and Grolemund, G. (2023).
+  [*R for Data Science (2e)*](https://r4ds.hadley.nz/).
+- [`ggplot2` documentation](https://ggplot2.tidyverse.org/).
+- [Quarto documentation for computations with R](https://quarto.org/docs/computations/r.html).
+- [GEIH sample data dictionary](https://ignaciomsarmiento.github.io/GEIH2018_sample/dictionary.html).
