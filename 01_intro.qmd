@@ -105,6 +105,14 @@ By the end of the session, you should be able to:
 4. Plot `ggplot2` figures.
 5. Export tables and figures using reproducible project paths.
 
+Additionally, we'll save everything in a GitHub repository, so you will learn:
+
+1. what makes a repository reproducible.
+2. how to organize the analysis in a self-contained R project.
+3. how to rack code changes using Git.
+4. how to collaborate with a team using GitHub.
+5. to document the repository using a `README`.
+
 *Acknowledgement: Most of the materials used in this complementary session were contributed by previous TAs, especially [Eduard Martínez](https://eduard-martinez.github.io/), [Lucas Gómez](https://lgomezt.github.io/), Andrés Rengifo, Valentina Laverde, and Gustavo Castillo. We are truly grateful for their help.*
 
 # Initial configuration
@@ -123,7 +131,8 @@ p_load(
   gtsummary,  # Create descriptive tables.
   gt,         # Format and export tables.
   conflicted, # Resolve conflicts between functions with the same name.
-  webshot2    # Export gt tables as PNG files.
+  webshot2,   # Export gt tables as PNG files.
+  sessioninfo # Show the session information.
 )
 
 conflict_prefer(name = "filter", winner = "dplyr") 
@@ -141,7 +150,10 @@ dir.create(
   recursive = TRUE,
   showWarnings = FALSE
 )
+```
 
+```{r setup-plots}
+#| echo: false
 # (Optional). Configure the default behavior for ggplot2: centered bold title, 
 # legend at the bottom, and transparent background.
 theme_set(theme_classic(base_size = 13))
@@ -229,7 +241,7 @@ db_geih <- db_geih |>
 db_geih |> skimr::skim()
 ```
 
-Even tough we're filtering by employed adults, 40% of the observations lack of labor income. Your mission, if you choose to accept it, is to determine why that happened. We should not just drop `NA` observations without arguing why it's a proper choice. It's important that you understand the population and the dataset before making methodological decisions about it. Otherwise, it is not possible to trust the statistics you present. For now, we can just drop `NA` observations (or use the argument `na.rm = TRUE` when needed). However, beware that this solution only avoids the computational matter. It estimates values among reporters, but doesn't solve the selection issue.
+Even though we're filtering by employed adults, approximately 13.5% of the observations lack labor income. Your mission, if you choose to accept it, is to determine why that happened. We should not just drop `NA` observations without arguing why it's a proper choice. It's important that you understand the population and the dataset before making methodological decisions about it. Otherwise, it is not possible to trust the statistics you present. For now, we can just drop `NA` observations (or use the argument `na.rm = TRUE` when needed). However, beware that this solution only avoids the computational matter. It estimates values among reporters, but doesn't solve the selection issue.
 
 ```{r drop-na}
 db_geih <- db_geih |> drop_na()
@@ -526,3 +538,13 @@ Before finishing, ask yourself:
   [*R for Data Science (2e)*](https://r4ds.hadley.nz/).
 - [`ggplot2` documentation](https://ggplot2.tidyverse.org/).
 - [GEIH sample data dictionary](https://ignaciomsarmiento.github.io/GEIH2018_sample/dictionary.html).
+
+# Session information
+
+`session_info()` reports the R version, platform, locale, and loaded package
+versions used to execute this notebook. This information can help diagnose
+differences across computers.
+
+```{r session-information}
+sessioninfo::session_info()
+```
