@@ -1,0 +1,6 @@
+source(file.path("code", "00_setup.R"))
+source(here::here("code", "01_import.R"))
+source(here::here("code", "02_clean.R"))
+source(here::here("code", "03_descriptive.R"))
+source(here::here("code", "04_figures.R"))
+source(here::here("code", "05_export.R"))
