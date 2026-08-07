@@ -1,0 +1,16 @@
+# Ignore exact R session files.
+.Rhistory
+.RData
+
+# Ignore root-level RStudio and generated-output folders.
+/.Rproj.user/
+/output/
+/img/
+
+# Ignore all `.pdf` and `.html` files.
+*.pdf
+*.html
+
+# Ignore all `.md` files, but keep the README.
+*.md
+!README.md
