@@ -4,7 +4,7 @@
 
 # Ignore root-level RStudio and generated-output folders.
 /.Rproj.user/
-/output/
+/temp/
 /img/
 
 # Ignore all `.pdf` and `.html` files.
