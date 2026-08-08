@@ -1,3 +1,11 @@
+# Purpose:
+#   Calculate general and grouped descriptive statistics for hours worked and
+#   monthly labour income.
+# Inputs:
+#   The cleaned `db_geih` object created by `03_cleaning_GEIH.R`.
+# Outputs:
+#   `tab_example`, a table of income statistics grouped by sex and formality.
+
 tab_example <- db_geih |> 
   summarise(mean_num_hours = mean(num_hoursWorked),
             median_num_hours = median(num_hoursWorked),

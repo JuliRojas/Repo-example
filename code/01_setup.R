@@ -1,3 +1,9 @@
+# Purpose:
+#   Prepare the R session by loading packages and resolving function conflicts.
+# Note:
+#   Internet connection is needed when `pacman` or another required package is 
+#   absent.
+
 # Install pacman if necessary, then load the packages used in this session.
 if (!require(pacman)) install.packages("pacman")
 library(pacman)
@@ -16,15 +22,3 @@ p_load(
 conflict_prefer(name = "filter", winner = "dplyr")
 
 options(scipen = 999) # Turn off scientific notation
-
-# Create the output folders if they do not already exist.
-dir.create(
-  path = here::here("output", "figures"),
-  recursive = TRUE,
-  showWarnings = FALSE
-)
-dir.create(
-  path = here::here("output", "tables"),
-  recursive = TRUE,
-  showWarnings = FALSE
-)

@@ -1,3 +1,11 @@
+# Purpose:
+#   Construct the histogram of monthly labour income using Scott's rule for the
+#   histogram bin width.
+# Inputs:
+#   The cleaned `db_geih` object created by `03_cleaning_GEIH.R`.
+# Outputs:
+#   `fig_income_distribution` ggplot object.
+
 # Scott's rule.
 num_binwidth <- 3.5 * sd(db_geih$num_labIncome) / length(db_geih$num_labIncome)^(1/3)
 num_binwidth <- round(x = num_binwidth, digits = 2)

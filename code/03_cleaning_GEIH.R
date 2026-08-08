@@ -1,3 +1,11 @@
+# Purpose:
+#   Filter employed adults, rename the selected variables, label categorical 
+#   variables, and remove incomplete observations.
+# Inputs:
+#   `db_geih`, created by `02_import.R`.
+# Outputs:
+#   Overwritten `db_geih` containing the cleaned complete-case analytical sample.
+
 # We can rename several columns by creating a vector where each entry corresponds 
 # to the name of a column and its index corresponds to the new name we want to assign.
 text_vars <- c('num_age' = 'age', 'bin_male' = 'sex', 'bin_employed' = 'ocu', 
