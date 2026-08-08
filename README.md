@@ -17,17 +17,18 @@ The empirical question is:
 ## Repository structure
 
 ```text
+Project
 ├── README.md
 ├── .gitignore
-├── project.Rproj
+├── Project.Rproj
 ├── code/
-│   ├── main.R
-│   ├── 00_setup.R
-│   ├── 01_import.R
-│   ├── 02_clean.R
-│   ├── 03_descriptive.R
-│   ├── 04_figures.R
-│   └── 05_export.R
+│   ├── 00_main.R
+│   ├── 01_setup.R
+│   ├── 02_import.R
+│   ├── 03_cleaning_GEIH.R
+│   ├── 04_tab_descriptive_statistics_income.R
+│   ├── 05_fig_distribution_labor_income.R
+│   └── 06_export_fig.R
 └── output/
     ├── figures/
     └── tables/
@@ -65,7 +66,7 @@ any other missing packages and then loads them. For more information related to 
 Open `project.Rproj` to activate relative paths and run the following command in RStudio:
 
 ```r
-source("code/main.R")
+source("code/00_main.R")
 ```
 
 `main.R` sources every numbered script in order. 
