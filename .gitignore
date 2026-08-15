@@ -7,7 +7,7 @@
 /temp/
 /img/
 
-# Ignore all `.pdf` and `.html` files.
+# Ignore all `.pdf`, `.qmd`, and `.html` files.
 *.pdf
 *.html
 
