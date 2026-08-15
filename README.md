@@ -28,7 +28,6 @@ Project
 │   ├── 03_cleaning_GEIH.R
 │   ├── 04_tab_descriptive_statistics_income.R
 │   ├── 05_fig_distribution_labor_income.R
-│   └── 06_export_fig.R
 └── output/
     ├── figures/
     └── tables/
@@ -76,14 +75,9 @@ source("code/00_main.R")
 A successful execution recreates:
 
 - `output/figures/fig_income_distribution.png`
-- `output/figures/fig_income_by_sex_and_formality.png`
-- `output/tables/tab_descriptive.png`
 
-The `output/` directory is ignored by Git, so it's created at your local machine. The first figure corresponds to the distribution of 
-monthly labor income among employed adults. The second figure disaggregates the distribution by
-sex and type of employment (i.e., formal and informal workers). The third output (and the first
-table) is descriptive statistics that shows the variability of the income across different
-types of workers.
+The `output/` directory is ignored by Git, so it's created at your local machine. The figure 
+corresponds to the distribution of monthly labor income among employed adults. 
 
 ## Session information
 
